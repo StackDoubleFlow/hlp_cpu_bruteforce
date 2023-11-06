@@ -8,8 +8,31 @@
 #include <atomic>
 #include <thread>
 
-using LayerOuts = std::array<uint8_t, 16>;
 using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
+
+struct LayerOuts {
+    uint64_t data = 0;
+
+    LayerOuts() {};
+
+    LayerOuts(std::array<uint8_t, 16> outs) {
+        for (int i = 0; i < 16; i++) {
+            set_at(i, outs[i]);
+        }
+    }
+
+    uint8_t get_at(uint8_t input) {
+        return (data >> (static_cast<uint64_t>(input) * 4)) & 0xF;
+    }
+
+    void set_at(uint8_t input, uint8_t val) {
+        data |= static_cast<uint64_t>(val) << (input * 4);
+    }
+
+    bool operator==(const LayerOuts& other) {
+        return data == other.data;
+    }
+};
 
 struct LayerInfo {
     uint8_t left_ss;
@@ -43,7 +66,7 @@ auto layer_outs(LayerInfo& info) {
     for (int i = 0; i < 16; i++) {
         uint8_t left = comparator(info.left_sub, i, info.left_ss);
         uint8_t right = comparator(info.right_sub, info.right_ss, i);
-        outs[i] = std::max(left, right);
+        outs.set_at(i, std::max(left, right));
     }
     return outs;
 }
@@ -82,7 +105,7 @@ UniqueLayers find_unique_layers() {
 auto compose(LayerOuts& x, LayerOuts& y) {
     LayerOuts out;
     for (int i = 0; i < 16; i++) {
-        out[i] = y[x[i]];
+        out.set_at(i, y.get_at(x.get_at(i)));
     }
     return out;
 }
@@ -95,7 +118,7 @@ void finish(TimePoint start_time) {
     double elapsed_time_ms = std::chrono::duration<double, std::milli>(now - start_time).count();
     fmt::println("Done at {}ms", elapsed_time_ms);
     if (end_comparisons.load() > 0)
-    fmt::println("Total end comparisons: {}", end_comparisons.load());
+        fmt::println("Total end comparisons: {}", end_comparisons.load());
     std::exit(0);
 }
 
@@ -103,9 +126,9 @@ bool search(UniqueLayers& ul, int depth, LayerOuts& base, LayerOuts& target, std
     // Invalid mapping check
     int8_t predicted_mapping[16] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
     for (int i = 0; i < 16; i++) {
-        uint8_t in = base[i];
-        if (predicted_mapping[in] < 0) predicted_mapping[in] = target[i];
-        else if (predicted_mapping[in] != target[i]) return false;
+        uint8_t in = base.get_at(i);
+        if (predicted_mapping[in] < 0) predicted_mapping[in] = target.get_at(i);
+        else if (predicted_mapping[in] != target.get_at(i)) return false;
     }
 
     if (depth > 1) {
@@ -198,12 +221,12 @@ int main() {
     // LayerOuts target = {{3,1,4,1,5,9,2,6,5,3,5,8,9,7,9,3}};
 
     int max_depth = 9;
-    int max_threads = 25;
+    int max_threads = 2;
 
     fmt::print("Starting search for [");
-    for (size_t i = 0; i < target.size(); i++) {
+    for (size_t i = 0; i < 16; i++) {
         if (i != 0) fmt::print(", ");
-        fmt::print("{}", target[i]);
+        fmt::print("{}", target.get_at(i));
     }
     fmt::print("]\n");
     fmt::println("max_depth: {}, max_threads: {}", max_depth, max_threads);
@@ -212,7 +235,7 @@ int main() {
     fmt::println("Found {} unique layers", unique_layers.lut.size());
 
     LayerOuts base;
-    for (int i = 0; i < 16; i++) base[i] = i;
+    for (int i = 0; i < 16; i++) base.set_at(i, i);
 
     search_entry(unique_layers, max_depth, max_threads, base, target);
 }
