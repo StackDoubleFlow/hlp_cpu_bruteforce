@@ -134,20 +134,6 @@ bool search(UniqueLayers& ul, int depth, LayerOuts& base, LayerOuts& target, std
     }
 }
 
-void bench_depth(UniqueLayers& ul, LayerOuts& base, int depth) {
-    fmt::println("Starting benchmark for {} layers", depth);
-    auto t_start = std::chrono::high_resolution_clock::now();
-
-    LayerOuts target = {0, 2, 4, 6, 8, 10, 12, 14, 0, 2, 4, 6, 8, 10, 12, 14};
-    std::vector<size_t> res;
-    search(ul, depth, base, target, res);
-
-    auto t_end = std::chrono::high_resolution_clock::now();
-
-    double elapsed_time_ms = std::chrono::duration<double, std::milli>(t_end-t_start).count();
-    fmt::println("Searching {} layers took {}ms", depth, elapsed_time_ms);
-}
-
 int main() {
     // Repeater
     // LayerOuts target = {0, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15};
@@ -174,8 +160,6 @@ int main() {
 
     LayerOuts base;
     for (int i = 0; i < 16; i++) base[i] = i;
-
-    // bench_depth(unique_layers, base, 3);
 
     auto start_time = std::chrono::high_resolution_clock::now();
     for (int i = 1; i <= max_depth; i++) {
