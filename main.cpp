@@ -146,6 +146,18 @@ bool search_range(UniqueLayers& ul, int depth, LayerOuts& base, LayerOuts& targe
     return false;
 }
 
+void thread_entry(UniqueLayers& ul, int depth, LayerOuts& base, LayerOuts& target, size_t start, size_t end, TimePoint start_time) {
+    std::vector<size_t> res;
+    bool found = search_range(ul, depth, base, target, res, 0, ul.lut.size());
+    if (found) {
+        std::reverse(res.begin(), res.end());
+        std::string an;
+        res_an(res, ul, an);
+        fmt::println("Found solution at depth {}: {}", depth, an);
+        finish(start_time);
+    }
+}
+
 void search_entry(UniqueLayers& ul, int max_depth, int max_threads, LayerOuts& base, LayerOuts& target) {
     auto start_time = std::chrono::high_resolution_clock::now();
     for (int i = 1; i <= max_depth; i++) {
@@ -153,15 +165,7 @@ void search_entry(UniqueLayers& ul, int max_depth, int max_threads, LayerOuts& b
         double elapsed_time_ms = std::chrono::duration<double, std::milli>(now - start_time).count();
 
         fmt::println("Searching depth {} ({}ms elapsed)", i, elapsed_time_ms);
-        std::vector<size_t> res;
-        bool found = search_range(ul, i, base, target, res, 0, ul.lut.size());
-        if (found) {
-            std::reverse(res.begin(), res.end());
-            std::string an;
-            res_an(res, ul, an);
-            fmt::println("Found solution at depth {}: {}", i, an);
-            finish(start_time);
-        }
+        thread_entry(ul, i, base, target, 0, ul.lut.size(), start_time);
     }
     finish(start_time);
 }
