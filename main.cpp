@@ -134,6 +134,18 @@ bool search(UniqueLayers& ul, int depth, LayerOuts& base, LayerOuts& target, std
     }
 }
 
+// Search using a range of the depth 1 branches
+bool search_range(UniqueLayers& ul, int depth, LayerOuts& base, LayerOuts& target, std::vector<size_t>& stack, size_t start, size_t end) {
+    for (size_t i = start; i < end; i++) {
+        auto composed = compose(base, ul.lut[i]);
+        if (search(ul, depth - 1, composed, target, stack)) {
+            stack.push_back(i);
+            return true;
+        }
+    }
+    return false;
+}
+
 void search_entry(UniqueLayers& ul, int max_depth, int max_threads, LayerOuts& base, LayerOuts& target) {
     auto start_time = std::chrono::high_resolution_clock::now();
     for (int i = 1; i <= max_depth; i++) {
@@ -142,7 +154,7 @@ void search_entry(UniqueLayers& ul, int max_depth, int max_threads, LayerOuts& b
 
         fmt::println("Searching depth {} ({}ms elapsed)", i, elapsed_time_ms);
         std::vector<size_t> res;
-        bool found = search(ul, i, base, target, res);
+        bool found = search_range(ul, i, base, target, res, 0, ul.lut.size());
         if (found) {
             std::reverse(res.begin(), res.end());
             std::string an;
