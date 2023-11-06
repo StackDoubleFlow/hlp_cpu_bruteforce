@@ -89,11 +89,12 @@ auto compose(LayerOuts& x, LayerOuts& y) {
 
 std::atomic_uint64_t end_comparisons = 0;
 
-// Helper function for printing ending statistics and solution that can be called from any thread
+// Helper function for printing ending statistics that can be called from any thread
 void finish(TimePoint start_time) {
     auto now = std::chrono::high_resolution_clock::now();
     double elapsed_time_ms = std::chrono::duration<double, std::milli>(now - start_time).count();
     fmt::println("Done at {}ms", elapsed_time_ms);
+    if (end_comparisons.load() > 0)
     fmt::println("Total end comparisons: {}", end_comparisons.load());
     std::exit(0);
 }
