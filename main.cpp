@@ -8,6 +8,7 @@
 #include <atomic>
 
 using LayerOuts = std::array<uint8_t, 16>;
+using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
 
 struct LayerInfo {
     uint8_t left_ss;
@@ -87,6 +88,15 @@ auto compose(LayerOuts& x, LayerOuts& y) {
 
 std::atomic_uint64_t end_comparisons = 0;
 
+// Helper function for printing ending statistics and solution that can be called from any thread
+void finish(TimePoint start_time) {
+    auto now = std::chrono::high_resolution_clock::now();
+    double elapsed_time_ms = std::chrono::duration<double, std::milli>(now - start_time).count();
+    fmt::println("Done at {}ms", elapsed_time_ms);
+    fmt::println("Total end comparisons: {}", end_comparisons.load());
+    std::exit(0);
+}
+
 bool search(UniqueLayers& ul, int depth, LayerOuts& base, LayerOuts& target, std::vector<size_t>& stack) {
     // Invalid mapping check
     int8_t predicted_mapping[16] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
@@ -115,6 +125,7 @@ bool search(UniqueLayers& ul, int depth, LayerOuts& base, LayerOuts& target, std
             if (composed == target) {
                 // TODO: figure out why removing this print somehow adds 2 seconds
                 fmt::println("found!");
+
                 stack.push_back(i);
                 return true;
             }
@@ -142,7 +153,7 @@ int main() {
     // LayerOuts target = {0, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15};
 
     // Les challenge
-    // LayerOuts target = {7, 7, 2, 3, 9,10,11, 3, 4, 5, 6, 7, 8, 7, 7,14};
+    LayerOuts target = {7, 7, 2, 3, 9,10,11, 3, 4, 5, 6, 7, 8, 7, 7,14};
 
     // Pi
     // LayerOuts target = {3,1,4,1,5,9,2,6,5,3,5,8,9,7,9,3};
@@ -170,11 +181,8 @@ int main() {
             std::string an;
             res_an(res, unique_layers, an);
             fmt::println("Found solution at depth {}: {}", i, an);
-            break;
+            finish(start_time);
         }
     }
-    auto now = std::chrono::high_resolution_clock::now();
-    double elapsed_time_ms = std::chrono::duration<double, std::milli>(now - start_time).count();
-    fmt::println("Done at {}ms", elapsed_time_ms);
-    fmt::println("Total end comparisons: {}", end_comparisons.load());
+    finish(start_time);
 }
