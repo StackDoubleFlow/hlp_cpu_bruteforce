@@ -5,6 +5,7 @@
 #include <array>
 #include <chrono>
 #include <fmt/core.h>
+#include <atomic>
 
 using LayerOuts = std::array<uint8_t, 16>;
 
@@ -84,7 +85,7 @@ auto compose(LayerOuts& x, LayerOuts& y) {
     return out;
 }
 
-int end_comparisons = 0;
+std::atomic_uint64_t end_comparisons = 0;
 
 bool search(UniqueLayers& ul, int depth, LayerOuts& base, LayerOuts& target, std::vector<size_t>& stack) {
     // Invalid mapping check
@@ -107,8 +108,13 @@ bool search(UniqueLayers& ul, int depth, LayerOuts& base, LayerOuts& target, std
     } else {
         for (size_t i = 0; i < ul.lut.size(); i++) {
             auto composed = compose(base, ul.lut[i]);
-            end_comparisons++;
+
+            // Counting for debugging (may double execution time)
+            // end_comparisons.fetch_add(1, std::memory_order_relaxed);
+
             if (composed == target) {
+                // TODO: figure out why removing this print somehow adds 2 seconds
+                fmt::println("found!");
                 stack.push_back(i);
                 return true;
             }
@@ -135,10 +141,13 @@ int main() {
     // Repeater
     // LayerOuts target = {0, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15};
 
-    // Doubler
-    LayerOuts target = {7, 7, 2, 3, 9,10,11, 3, 4, 5, 6, 7, 8, 7, 7,14};
+    // Les challenge
+    // LayerOuts target = {7, 7, 2, 3, 9,10,11, 3, 4, 5, 6, 7, 8, 7, 7,14};
 
-    int max_depth = 6;
+    // Pi
+    // LayerOuts target = {3,1,4,1,5,9,2,6,5,3,5,8,9,7,9,3};
+
+    int max_depth = 9;
 
     UniqueLayers unique_layers = find_unique_layers();
     fmt::println("Found {} unique layers", unique_layers.lut.size());
@@ -167,5 +176,5 @@ int main() {
     auto now = std::chrono::high_resolution_clock::now();
     double elapsed_time_ms = std::chrono::duration<double, std::milli>(now - start_time).count();
     fmt::println("Done at {}ms", elapsed_time_ms);
-    fmt::println("Total end comparisons: {}", end_comparisons);
+    fmt::println("Total end comparisons: {}", end_comparisons.load());
 }
