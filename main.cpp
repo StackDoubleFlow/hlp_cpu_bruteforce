@@ -159,6 +159,15 @@ int main() {
     // LayerOuts target = {3,1,4,1,5,9,2,6,5,3,5,8,9,7,9,3};
 
     int max_depth = 9;
+    int max_threads = 1;
+
+    fmt::print("Starting search for [");
+    for (size_t i = 0; i < target.size(); i++) {
+        if (i != 0) fmt::print(", ");
+        fmt::print("{}", target[i]);
+    }
+    fmt::print("]\n");
+    fmt::println("max_depth: {}, max_threads: {}", max_depth, max_threads);
 
     UniqueLayers unique_layers = find_unique_layers();
     fmt::println("Found {} unique layers", unique_layers.lut.size());
