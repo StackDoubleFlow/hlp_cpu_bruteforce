@@ -188,13 +188,13 @@ void search_entry(UniqueLayers& ul, int max_depth, int max_threads, LayerOuts& b
 
 int main() {
     // Repeater
-    // LayerOuts target = {0, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15};
+    // LayerOuts target = {{0, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15}};
 
-    // Les challenge
-    // LayerOuts target = {7, 7, 2, 3, 9,10,11, 3, 4, 5, 6, 7, 8, 7, 7,14};
+    // From Amino's test sequences: https://discord.com/channels/721120380424814692/721127492970086483/1019269510336884759
+    LayerOuts target = {{7, 7, 2, 3, 9,10,11, 3, 4, 5, 6, 7, 8, 7, 7,14}};
 
     // Pi
-    LayerOuts target = {3,1,4,1,5,9,2,6,5,3,5,8,9,7,9,3};
+    // LayerOuts target = {{3,1,4,1,5,9,2,6,5,3,5,8,9,7,9,3}};
 
     int max_depth = 9;
     int max_threads = 25;
