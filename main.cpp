@@ -6,6 +6,7 @@
 #include <chrono>
 #include <fmt/core.h>
 #include <atomic>
+#include <thread>
 
 using LayerOuts = std::array<uint8_t, 16>;
 using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
@@ -159,13 +160,28 @@ void thread_entry(UniqueLayers& ul, int depth, LayerOuts& base, LayerOuts& targe
 }
 
 void search_entry(UniqueLayers& ul, int max_depth, int max_threads, LayerOuts& base, LayerOuts& target) {
+    size_t work_per_thread = ul.lut.size() / max_threads;
+    size_t work_rem = ul.lut.size() % max_threads;
+
     auto start_time = std::chrono::high_resolution_clock::now();
     for (int i = 1; i <= max_depth; i++) {
         auto now = std::chrono::high_resolution_clock::now();
         double elapsed_time_ms = std::chrono::duration<double, std::milli>(now - start_time).count();
 
         fmt::println("Searching depth {} ({}ms elapsed)", i, elapsed_time_ms);
-        thread_entry(ul, i, base, target, 0, ul.lut.size(), start_time);
+        std::vector<std::thread> threads;
+        for (int tid = 0; tid < max_threads; tid++) {
+            size_t start = tid * work_per_thread;
+            size_t end = start + work_per_thread;
+            // We give the last thread the remainder work
+            if (tid == max_threads - 1) end += work_rem;
+
+            // fmt::println("starting thread with range {}-{}", start, end);
+            threads.emplace_back(thread_entry, std::ref(ul), i, std::ref(base), std::ref(target), start, end, start_time);
+        }
+        for (auto& thread : threads) {
+            thread.join();
+        }
     }
     finish(start_time);
 }
@@ -175,13 +191,13 @@ int main() {
     // LayerOuts target = {0, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15};
 
     // Les challenge
-    LayerOuts target = {7, 7, 2, 3, 9,10,11, 3, 4, 5, 6, 7, 8, 7, 7,14};
+    // LayerOuts target = {7, 7, 2, 3, 9,10,11, 3, 4, 5, 6, 7, 8, 7, 7,14};
 
     // Pi
-    // LayerOuts target = {3,1,4,1,5,9,2,6,5,3,5,8,9,7,9,3};
+    LayerOuts target = {3,1,4,1,5,9,2,6,5,3,5,8,9,7,9,3};
 
     int max_depth = 9;
-    int max_threads = 1;
+    int max_threads = 25;
 
     fmt::print("Starting search for [");
     for (size_t i = 0; i < target.size(); i++) {
