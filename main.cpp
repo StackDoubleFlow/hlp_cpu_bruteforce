@@ -134,6 +134,26 @@ bool search(UniqueLayers& ul, int depth, LayerOuts& base, LayerOuts& target, std
     }
 }
 
+void search_entry(UniqueLayers& ul, int max_depth, int max_threads, LayerOuts& base, LayerOuts& target) {
+    auto start_time = std::chrono::high_resolution_clock::now();
+    for (int i = 1; i <= max_depth; i++) {
+        auto now = std::chrono::high_resolution_clock::now();
+        double elapsed_time_ms = std::chrono::duration<double, std::milli>(now - start_time).count();
+
+        fmt::println("Searching depth {} ({}ms elapsed)", i, elapsed_time_ms);
+        std::vector<size_t> res;
+        bool found = search(ul, i, base, target, res);
+        if (found) {
+            std::reverse(res.begin(), res.end());
+            std::string an;
+            res_an(res, ul, an);
+            fmt::println("Found solution at depth {}: {}", i, an);
+            finish(start_time);
+        }
+    }
+    finish(start_time);
+}
+
 int main() {
     // Repeater
     // LayerOuts target = {0, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15};
@@ -161,21 +181,5 @@ int main() {
     LayerOuts base;
     for (int i = 0; i < 16; i++) base[i] = i;
 
-    auto start_time = std::chrono::high_resolution_clock::now();
-    for (int i = 1; i <= max_depth; i++) {
-        auto now = std::chrono::high_resolution_clock::now();
-        double elapsed_time_ms = std::chrono::duration<double, std::milli>(now - start_time).count();
-
-        fmt::println("Searching depth {} ({}ms elapsed)", i, elapsed_time_ms);
-        std::vector<size_t> res;
-        bool found = search(unique_layers, i, base, target, res);
-        if (found) {
-            std::reverse(res.begin(), res.end());
-            std::string an;
-            res_an(res, unique_layers, an);
-            fmt::println("Found solution at depth {}: {}", i, an);
-            finish(start_time);
-        }
-    }
-    finish(start_time);
+    search_entry(unique_layers, max_depth, max_threads, base, target);
 }
